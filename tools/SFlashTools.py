@@ -11,7 +11,7 @@ import tools.Tools as Tools
 
 
 def screenExtractNorDump(file):
-	os.system('cls')
+	UI.clearScreen()
 	print(TITLE+UI.getTab(STR_NOR_EXTRACT))
 	
 	with open(file, 'rb') as f:
@@ -28,7 +28,7 @@ def screenExtractNorDump(file):
 			info += '{} : {}\n'.format(key.ljust(12,' '),data[key])
 		info += '\n'
 		
-		print(STR_EXTRACTING.format(sn)+'\n')
+		print(STR_EXTRACTING%sn+'\n')
 		
 		i = 0
 		for k in SFlash.NOR_PARTITIONS:
@@ -43,7 +43,7 @@ def screenExtractNorDump(file):
 		with open(folder + Utils.INFO_FILE_SFLASH, 'w') as txt:
 			txt.write(info)
 		
-		print('\n'+STR_SAVED_TO.format(folder))
+		print('\n'+STR_SAVED_TO%folder)
 	
 	print('\n'+STR_DONE)
 	
@@ -52,11 +52,11 @@ def screenExtractNorDump(file):
 
 
 def screenBuildNorDump(folder):
-	os.system('cls')
+	UI.clearScreen()
 	print(TITLE+UI.getTab(STR_NOR_BUILD))
 	
 	if not os.path.exists(folder):
-		print(STR_NO_FOLDER.format(folder)+'\n\n'+STR_ABORT)
+		print(STR_NO_FOLDER%(folder)+'\n\n'+STR_ABORT)
 		input(STR_BACK)
 		return
 	
@@ -93,7 +93,7 @@ def screenBuildNorDump(folder):
 		
 		fname = os.path.join(folder, 'sflash0.bin')
 		
-		print(STR_BUILDING.format(fname))
+		print(STR_BUILDING%fname)
 		
 		out = open(fname,"wb")
 		
@@ -113,7 +113,7 @@ def screenBuildNorDump(folder):
 
 
 def screenFlagsToggler(file):
-	os.system('cls')
+	UI.clearScreen()
 	print(TITLE+UI.getTab(STR_WARNING))
 	
 	print(UI.warning(STR_PATCHES))
@@ -125,6 +125,7 @@ def screenFlagsToggler(file):
 		patches = [
 			{'k':'MODEL',		'v':list(SFlash.PS_MODELS.keys()),	'd':list(SFlash.PS_MODELS.values())},
 			{'k':'IDU',			'v':[b'\x00',b'\x01'],				'd':[STR_OFF,STR_ON]},
+			{'k':'ACT_SLOT',	'v':[b'\x00',b'\x80'],				'd':['A','B']},
 		]
 		
 		for i in range(len(patches)):
@@ -172,12 +173,12 @@ def toggleFlag(file, patch):
 			# Set flag in backup area
 			SFlash.setNorDataB(f, patch['k'], patch['v'][i])
 	
-	UI.setStatus(STR_SET_TO.format(SFlash.getNorAreaName(patch['k']),patch['d'][i]))
+	UI.setStatus(STR_SET_TO%(SFlash.getNorAreaName(patch['k']), patch['d'][i]))
 
 
 
 def screenPartitionsInfo(file):
-	os.system('cls')
+	UI.clearScreen()
 	print(TITLE+UI.getTab('Partitions info'))
 	
 	with open(file,'rb') as f:
@@ -200,15 +201,15 @@ def screenPartitionsInfo(file):
 
 
 def screenValidate(file):
-	os.system('cls')
+	UI.clearScreen()
 	print(TITLE + UI.getTab(STR_NOR_VALIDATOR))
 	
 	with open(file,'rb') as f:
 		data = f.read()
-		fw = SFlash.getNorFW(f, False)['c']
+		fw = SFlash.getNorFW(f, 4)['c']
 		slot = 'A' if SFlash.getNorData(f, 'ACT_SLOT')[0] == 0x00 else 'B'
 		
-		print(STR_FW_VERSION.format(fw,slot)+'\n')
+		print(STR_FW_VERSION%(fw,slot)+'\n')
 		
 		magics = {}
 		for k in SFlash.MAGICS:
@@ -256,7 +257,7 @@ def screenValidate(file):
 
 
 def screenSFlashTools(file):
-	os.system('cls')
+	UI.clearScreen()
 	print(TITLE+UI.getTab(STR_NOR_INFO))
 	
 	info = SFlash.getSFlashInfo(file)
@@ -281,7 +282,7 @@ def screenSFlashTools(file):
 	elif choice == '2':
 	    screenExtractNorDump(file)
 	elif choice == '3':
-	    screenBuildNorDump(os.path.dirname(file) + os.sep + SFlash.getNorDataByPath(file, 'SN', True))
+	    screenBuildNorDump(os.path.dirname(file) + os.sep + SFlash.getNorData(file, 'SN', True))
 	elif choice == '4':
 	    screenValidate(file)
 	

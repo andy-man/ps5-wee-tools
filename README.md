@@ -2,7 +2,7 @@
 
 # PS5 Wee Tools
 
-PS5 wee tools help to work with PS5 nor dump.
+PS5 wee tools help to work with PS5 sflash dump.
 
 Written in Python to keep it simple.
 
@@ -23,13 +23,15 @@ NOR tool
   * MD5, Board ID, Model, SKU, Region, SN / Mobo SN
   * Kiban ID, FW (current/min/factory), MAC (LAN/WiFi)
 * Flags toggle:
-  * kiosk mode (idu), model (disc/digital)
+  * kiosk mode (idu), model (slim/disc/digital), active slot
 * Extract NOR's partitions
 * Build dump from extracted files
+* Basic validation
 
 Common
 * File browser
 * Terminal (UART) with highlighting
+* sFlash r/w (SPIway by Judges)
 * Multy files compare
 * Pack / Unpack 2BLS files
 
@@ -37,8 +39,9 @@ Don't use if you don't understant what is it for!
 
 ## Credits
 
-* theCoder
-* zecoxao
+[Abkarino](https://github.com/AbkarinoMHM), 
+[zecoxao](https://github.com/zecoxao), 
+[TheCod3r](https://www.youtube.com/@TheCod3r)
 
 And of course [PSDevWiki](https://www.psdevwiki.com/ps5/)
 
@@ -55,6 +58,15 @@ And of course [PSDevWiki](https://www.psdevwiki.com/ps5/)
 * [X/Twitter](https://twitter.com/AndyManDev)
 
 ## Changelog
+
+### v0.1.5
+* FW detection bugfix
+* Slim model support
+* Flags toggle: active slot
+* Region #18 added
+* Code optimization
+* Minor bug fixes
+
 
 ### v0.1 - Initial release
 * PS5 Nor dump info

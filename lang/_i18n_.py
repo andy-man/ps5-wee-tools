@@ -4,7 +4,7 @@
 #==========================================================
 import sys, os
 
-APP_VERSION = '0.1.1'
+APP_VERSION = '0.1.5'
 
 # Colors stuff
 
@@ -59,6 +59,9 @@ class UI:
 	DIVIDER			= Clr.fg.yellow + '_'*LINE_WIDTH + Clr.reset + '\n'
 	DIVIDER_DASH	= Clr.fg.yellow + '-'*LINE_WIDTH + Clr.reset + '\n'
 	DIVIDER_BOLD	= '='*LINE_WIDTH + '\n'
+	
+	def clearScreen():
+		os.system('cls' if sys.platform[:3] == 'win' else 'clear')
 	
 	# Colors
 	
@@ -162,7 +165,6 @@ TITLE = UI.DIVIDER_BOLD + APP_NAME+('by Andy_maN').rjust(UI.LINE_WIDTH-len(APP_N
 
 # Fill strings
 
-STR_MPATCH_INPUT	= UI.DIVIDER + STR_MPATCH_INPUT
 STR_CHOICE			= UI.DIVIDER + STR_CHOICE
 STR_BACK			= UI.DIVIDER + STR_BACK
 STR_CONFIRM			= UI.DIVIDER + STR_CONFIRM

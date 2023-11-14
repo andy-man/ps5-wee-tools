@@ -41,27 +41,41 @@ def getMemData(data, offset, lenght):
 
 
 def getData(file, off, len):
-	#file must be in rb/r+b mode
-	file.seek(off);
-	return file.read(len)
+	try:
+		if isinstance(file, str):
+			with open(file, 'rb') as f:
+				f.seek(off)
+				return f.read(len)
+		else:
+			file.seek(off)
+			return file.read(len)
+	except:
+		return ''
 
 
 
 def setData(file, off, val):
-	#file must be in r+b mode
-	file.seek(off);
-	return file.write(val)
+	try:
+		if isinstance(file, str):
+			with open(file, 'r+b') as f:
+				f.seek(off)
+				return f.write(val)
+		else:
+			file.seek(off)
+			return file.write(val)
+	except:
+		return ''
 
 
 
 def checkFileSize(file, size):
 	if not file or not os.path.isfile(file):
-		print((STR_FILE_NOT_EXISTS).format(file))
+		print(STR_FILE_NOT_EXISTS%file)
 		input(STR_BACK)
 		return False
 	
 	if os.stat(file).st_size != size:
-		print((STR_INCORRECT_SIZE).format(file))
+		print(STR_INCORRECT_SIZE%file)
 		input(STR_BACK)
 		return False
 	
@@ -146,7 +160,7 @@ def entropy(file):
 	for i in range(size):
 		vals[data[i]] += 1
 		if i % pp == 0:
-			print('\r'+STR_PROGRESS.format(i // pp),end='')
+			print('\r'+STR_PROGRESS%(i // pp),end='')
 	
 	probs = [val / size for val in vals.values()]
 	entropy = -sum(prob * math.log2(prob) for prob in probs if prob > 0)
