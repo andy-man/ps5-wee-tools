@@ -15,20 +15,18 @@ MBR_SIZE = 0x1000
 BLOCK_SIZE = 0x200
 
 PS_REGIONS = {
-	'00':'Japan',
-	'01':'US, Canada (North America)',
-	'15':'US, Canada (North America)',
-	'02':'Australia / New Zealand (Oceania)',
-	'03':'U.K. / Ireland',
-	'04':'Europe / Middle East / Africa',
-	'16':'Europe / Middle East / Africa',
-	'05':'Korea (South Korea)',
-	'06':'Southeast Asia / Hong Kong',
-	'07':'Taiwan',
-	'08':'Russia, Ukraine, India, Central Asia',
-	'09':'Mainland China',
-	'11':'Mexico, Central America, South America',
-	'14':'Mexico, Central America, South America',
+	'jp':{'n':'Japan',									'c':['00']},
+	'us':{'n':'US, Canada (North America)',				'c':['01','15']},
+	'au':{'n':'Australia / New Zealand (Oceania)',		'c':['02']},
+	'uk':{'n':'U.K. / Ireland',							'c':['03']},
+	'eu':{'n':'Europe / Middle East / Africa',			'c':['16','04']},
+	'kr':{'n':'Korea (South Korea)',					'c':['05']},
+	'sa':{'n':'Southeast Asia / Hong Kong',				'c':['06']},
+	'tw':{'n':'Taiwan',									'c':['07']},
+	'ru':{'n':'Russia, Ukraine, India, Central Asia',	'c':['08']},
+	'cn':{'n':'Mainland China',							'c':['09']},
+	'mx':{'n':'Mexico, Central America, South America',	'c':['11','14']},
+	'kr':{'n':'Singapore, Korea, Asia',					'c':['18']},
 }
 
 # {'o':<offset>, 'l':<length>, 't':<type>, 'n':<name>}
@@ -49,36 +47,39 @@ NOR_PARTITIONS = {
 # 'KEY':{'o':<offset>, 'l':<length>, 't':<type>, 'n':<name>}
 NOR_AREAS = {
 	
-	'ACT_SLOT':	{'o':0x001000,	'l':1,			't':'b',	'n':'Active slot'},		# 0x00 - A 0x80 - B
+	'ACT_SLOT':	{'o':0x001000,	'l':1,			't':'b',	'n':'Active slot'},				# 0x00 - A 0x80 - B
 	
 	'BOARD_ID':	{'o':0x1C4000,	'l':8,			't':'s',	'n':'Board id'},
 	'MAC':		{'o':0x1C4020,	'l':6,			't':'b',	'n':'LAN MAC Address'},
 	
-	'MODEL':	{'o':0x1C7011,	'l':1,			't':'b',	'n':'Model variant'}, # 02 disc / 03 digital
-	'MB_SN':	{'o':0x1C7200,	'l':16,			't':'s',	'n':'Motherboard Serial'},
-	'SN':		{'o':0x1C7210,	'l':17,			't':'s',	'n':'Console Serial'},
-	'SKU':		{'o':0x1C7230,	'l':13,			't':'s',	'n':'SKU Version'},
-	'REGION':	{'o':0x1C7236,	'l':2,			't':'s',	'n':'Region code'}, # where is the region byte code?
-	'KIBAN':	{'o':0x1C7250,	'l':13,			't':'s',	'n':'Kiban id'},
-	'SOCUID':	{'o':0x1C7260,	'l':16,			't':'s',	'n':'Social UID?'},
-	'MAC2':		{'o':0x1C73C0,	'l':6,			't':'b',	'n':'WiFi MAC Address'},
+	'MODEL':	{'o':0x1C7011,	'l':1,			't':'b',	'n':'Model variant'},			# 01 slim / 02 disc / 03 digital
+	'MODEL2':	{'o':0x1C7038,	'l':1,			't':'b',	'n':'Model variant 2'},			# 89 disc / 8D digital
+	
+	'MB_SN':	{'o':0x1C7200,	'l':16,			't':'s',	'n':'Motherboard Serial'},		#
+	'SN':		{'o':0x1C7210,	'l':17,			't':'s',	'n':'Console Serial'},			#
+	'SKU':		{'o':0x1C7230,	'l':13,			't':'s',	'n':'SKU Version'},				#
+	'REGION':	{'o':0x1C7236,	'l':2,			't':'s',	'n':'Region code'},				# Where is the region byte code?
+	'KIBAN':	{'o':0x1C7250,	'l':13,			't':'s',	'n':'Kiban id'},				#
+	'SOCUID':	{'o':0x1C7260,	'l':16,			't':'s',	'n':'Social UID?'},				#
+	'MAC2':		{'o':0x1C73C0,	'l':6,			't':'b',	'n':'WiFi MAC Address'},		#
 	
 	'EAP_MGC':	{'o':0x1C75FC,	'l':4,			't':'b',	'n':b'\xE5\xE5\xE5\x01'},		# Eap key magic 1CB1FC - 1C81FC = 3000 | 1C81FC - 1C75FC = C00
 	
-	'FW_U':		{'o':0x1C8068,	'l':4,			't':'b',	'n':'Current FW upper'},		#B+
+	'FW_F_U':	{'o':0x1C8068,	'l':4,			't':'b',	'n':'Factory FW upper'},		#
 	
-	'FW_F':		{'o':0x1C8C10,	'l':8,			't':'b',	'n':'Factory FW'},				#B+
-	'FW_F_TS':	{'o':0x1C8C18,	'l':8,			't':'b',	'n':'Factory FW timestamp'},	#B+
+	'FW_M':		{'o':0x1C8C10,	'l':8,			't':'b',	'n':'Minimum FW'},				#
+	'FW_M_TS':	{'o':0x1C8C18,	'l':8,			't':'b',	'n':'Minimum FW timestamp'},	# ??
 	
-	'FW_M':		{'o':0x1C8C20,	'l':8,			't':'b',	'n':'Minimum FW'},				#B+
-	'FW_M_TS':	{'o':0x1C8C28,	'l':8,			't':'b',	'n':'Minimum FW timestamp'},	#B+
+	'FW':		{'o':0x1C8C20,	'l':8,			't':'b',	'n':'Current FW'}, 				#
+	'FW_TS':	{'o':0x1C8C28,	'l':8,			't':'b',	'n':'Current FW timestamp'}, 	# ??
 	
-	'FW':		{'o':0x1C8C30,	'l':8,			't':'b',	'n':'Current FW'}, 				#B+
+	'FW_F':		{'o':0x1C8C30,	'l':8,			't':'b',	'n':'Factory FW'},				#
+	'FW_XX':	{'o':0x1C8C38,	'l':8,			't':'b',	'n':'Factory FW xx'},			# ??
 	
-	'IDU':		{'o':0x1C9600,	'l':1,			't':'b',	'n':'IDU (Kiosk mode)'},		#B+ | On(01), Off(00/FF)
+	'IDU':		{'o':0x1C9600,	'l':1,			't':'b',	'n':'IDU (Kiosk mode)'},		# B+ | On(01), Off(00/FF)
 }
 
-PS_MODELS = {b'\x02':'Disc edition', b'\x03':'Digital edition'}
+PS_MODELS = {b'\x01':'Slim edition', b'\x02':'Disc edition', b'\x03':'Digital edition'}
 
 MAGICS = {
 	"MBR"		: {"o": 0x00,		"v":b'SONY COMPUTER ENTERTAINMENT INC.'},
@@ -158,8 +159,10 @@ PARTITIONS_TYPES = {
 
 def getConsoleRegion(file):
 	code = getNorData(file, 'REGION', True)
-	desc = PS_REGIONS[code] if code in PS_REGIONS else STR_UNKNOWN
-	return [code, desc]
+	for k in PS_REGIONS:
+		if code in PS_REGIONS[k]['c']:
+			return [code, PS_REGIONS[k]['n']]
+	return [code, STR_UNKNOWN]
 
 
 
@@ -236,15 +239,13 @@ def getPartitionsInfo(f):
 
 
 
-def getNorFW(f, full = True):
-	fw = getNorData(f, 'FW')[::-1]
-	fw_m = getNorData(f, 'FW_M')[::-1]
-	fw_f = getNorData(f, 'FW_F')[::-1]
+def getNorFW(f, digits = 4):
+	fw_c = getNorData(f, 'FW')[:digits-1:-1]
+	fw_m = getNorData(f, 'FW_M')[:digits-1:-1]
+	fw_f = getNorData(f, 'FW_F')[:digits-1:-1]
 	
-	if full:
-		return {'c':fw, 'f':fw_f, 'm':fw_m}
-	else:
-		return {'c':'%d.%02d'%(fw[0],fw[1]), 'f':'%d.%02d'%(fw_f[0],fw_f[1]), 'm':'%d.%02d'%(fw_m[0],fw_m[1])}
+	return {'c':Utils.hex(fw_c,'.'), 'f':Utils.hex(fw_f,'.'), 'm':Utils.hex(fw_m,'.')}
+
 
 
 
@@ -261,12 +262,6 @@ def setNorData(file, key, val):
 	if not key in NOR_AREAS:
 		return False
 	return Utils.setData(file, NOR_AREAS[key]['o'], val)
-
-
-def getNorDataByPath(path, key, decode = False):
-	with open(path, 'rb') as f:
-		data = getNorData(f, key, decode)
-	return data
 
 
 
@@ -299,13 +294,13 @@ def getSFlashInfo(file = '-'):
 		active_slot = 'A' if getNorData(f, 'ACT_SLOT')[0] == 0x00 else 'B'
 		model = getNorData(f, 'MODEL')
 		region = getConsoleRegion(f)
-		fw = getNorFW(f, False)
+		fw = getNorFW(f, 4)
 		
 		info = {
 			'FILE'			: os.path.basename(file),
 			'MD5'			: Utils.getFileMD5(file),
 			'Board ID'		: Utils.hex(getNorData(f, 'BOARD_ID'),':'),
-			'Model'			: PS_MODELS[model] if model in PS_MODELS else STR_UNKNOWN,
+			'Model'			: PS_MODELS[model] if model in PS_MODELS else '[%02X] %s'%(int.from_bytes(model,'big'), STR_UNKNOWN),
 			'SKU / Slot'	: getNorData(f, 'SKU', True) + ' / [%s]'%active_slot,
 			'Region'		: '[{}] {}'.format(region[0], region[1]),
 			'SN / Mobo SN'	: getNorData(f, 'SN', True)+' / '+getNorData(f, 'MB_SN', True),

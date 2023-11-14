@@ -102,7 +102,7 @@ class WeeSerial:
 	def getLines(self, buf):
 		txt = ''
 		lines = []
-		prev_c = ''
+		prev_c = b''
 		
 		for c in buf:
 			if c in self.EOL:

@@ -346,7 +346,7 @@ class SpiFlasher(WeeSerial):
 				return False
 			progress = (b - block + 1) * kb_pb
 			percent = 100 if progress == total else progress // (total / 100)
-			elapsed = UI.cyan(STR_SECONDS.format(time.time() - start))
+			elapsed = UI.cyan(STR_SECONDS%(time.time() - start))
 			
 			self.printf(STR_SPW_PROGRESS%(b, progress, total, percent, elapsed), True)
 		
@@ -370,7 +370,7 @@ class SpiFlasher(WeeSerial):
 			
 			progress = (b - block + 1) * kb_pb
 			percent = 100 if progress == total else progress // (total / 100)
-			elapsed = UI.cyan(STR_SECONDS.format(time.time() - start))
+			elapsed = UI.cyan(STR_SECONDS%(time.time() - start))
 			
 			self.printf(STR_SPW_PROGRESS%(b, progress, total, percent, elapsed), True)
 		
@@ -411,7 +411,7 @@ class SpiFlasher(WeeSerial):
 			"""
 			progress = (b - block + 1) * kb_pb
 			percent = 100 if progress == total else progress // (total / 100)
-			elapsed = UI.cyan(STR_SECONDS.format(time.time() - start))
+			elapsed = UI.cyan(STR_SECONDS%(time.time() - start))
 			
 			self.printf(STR_SPW_PROGRESS%(b, progress, total, percent, elapsed), True)
 			

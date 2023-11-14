@@ -67,7 +67,7 @@ MENU_SPW_ACTS = {
 	'erase':	'Erasing',
 }
 
-STR_SECONDS				= '{:0.0f} seconds'
+STR_SECONDS				= '%0.0f seconds'
 STR_PORTS_LIST			= 'Serial ports'
 STR_MAIN_MENU			= 'Main menu'
 STR_FILE_LIST			= 'Files list'
@@ -107,7 +107,7 @@ STR_BAD_SIZE			= 'bad size'
 STR_OK					= 'OK'
 STR_FAIL				= 'Fail'
 STR_CANCEL				= 'Cancel'
-STR_IS_PART_VALID		= '[{}] {} FW {}'
+STR_IS_PART_VALID		= '[%s] %s FW %s'
 STR_SERIAL_MONITOR		= 'Terminal'
 
 STR_NO_PORTS			= ' No one serial port was found'
@@ -122,17 +122,17 @@ STR_EXPERIMENTAL		= ' * - experimental functions'
 STR_PERFORMED			= ' Performed action: '
 
 STR_EMPTY_FILE_LIST		= ' File list is empty'
-STR_NO_FOLDER			= ' Folder {} doesn\'t exists'
-STR_EXTRACTING			= ' Extracting sflash to {} folder'
+STR_NO_FOLDER			= ' Folder %s doesn\'t exists'
+STR_EXTRACTING			= ' Extracting sflash to %s folder'
 STR_FILES_CHECK			= ' Checking files'
-STR_BUILDING			= ' Building file {}'
+STR_BUILDING			= ' Building file %s'
 
 STR_DONE				= ' All done'
-STR_PROGRESS			= ' Progress {:2d}% '
-STR_PROGRESS_KB			= ' Progress: {}KB / {}KB'
+STR_PROGRESS			= ' Progress %2d%% '
+STR_PROGRESS_KB			= ' Progress: %dKB / %dKB'
 STR_WAIT				= ' Please wait...'
 STR_WAITING				= ' Waiting...'
-STR_SET_TO				= ' {} was set to [{}]'
+STR_SET_TO				= ' %s was set to [%s]'
 STR_ABORT				= ' Action was aborted'
 STR_FILENAME			= ' Filename: '
 
@@ -145,28 +145,20 @@ STR_UART				= ' UART is set to '
 STR_DIFF_SLOT_VALUES	= ' Values in slots are different!'
 STR_SYSFLAGS_CLEAN		= ' Sys flags were cleared. Tip: turn on UART'
 
-STR_RECOMMEND			= ' Recommended method [{}]'
-STR_PATCH_CANCELED		= ' Patch was canceled'
-STR_PATCH_SUCCESS		= ' Successfully removed {} entries'
-STR_PATCH_SAVED			= ' Patch was saved to {}'
-STR_MPATCH_INPUT		= ' How many records to clean (from end): '
 STR_CHOICE				= ' Make choice: '
 STR_BACK				= ' Press [ENTER] to go back'
-STR_TOO_MUCH			= ' {} is too much, maximum value is {}'
 
 STR_UNPATCHABLE			= ' Can\'t patch!'
 STR_PARTITIONS_CHECK	= ' Checking partitions'
 STR_ENTROPY				= ' Entropy statistics'
 STR_MAGICS_CHECK		= ' Checking magics'
-STR_DUPLICATES			= ' {} duplicate(s) found {}'
 
-STR_FW_VERSION			= ' FW version {} / Active slot {}'
+STR_FW_VERSION			= ' FW version %s / Active slot %s'
 
-STR_INCORRECT_SIZE		= ' {} - incorrect dump size!'
-STR_FILE_NOT_EXISTS		= ' File {} doesn\'t exist!'
+STR_INCORRECT_SIZE		= ' %s - incorrect dump size!'
+STR_FILE_NOT_EXISTS		= ' File %s doesn\'t exist!'
 STR_ERROR_FILE_REQ		= ' You need to select file first'
-STR_SAVED_TO			= ' Saved to {}'
-STR_SAVING_TO			= ' Saving to {}'
+STR_SAVED_TO			= ' Saved to %s'
 STR_ERROR_INPUT			= ' Incorrect input'
 STR_ERROR_DEF_VAL		= ' Setting default values'
 STR_ERROR_CHOICE		= ' Invalid choice'
@@ -185,8 +177,8 @@ STR_CURRENT				= ' Current: '
 STR_GO_BACK				= ' Go back'
 STR_FLASH_PATCHED		= ' Flash patched to console (SPIway)? [y] '
 
-STR_EMC_CMD_MODE		= 'Turning EMC cmd mode: [{}]'
-STR_SHOW_BYTECODES		= 'Show byte codes < 0x20: [{}]'
+STR_EMC_CMD_MODE		= 'Turning EMC cmd mode: [%s]'
+STR_SHOW_BYTECODES		= 'Show byte codes < 0x20: [%s]'
 STR_MONITOR_STATUS		= 'RX/TX: %d/%d (bytes) Elapsed: %d (sec)'
 
 STR_CHIP_CONFIG			= ' Chip config'
@@ -213,6 +205,9 @@ STR_SPW_ERR_OVERFLOW	= 'Chip has %d blocks. Writing outside the chip\'s capacity
 
 STR_CANT_USE			= 'Can\'t use this'
 STR_DIFF_SN				= 'Serial numbers are different!'
+
+STR_INFO_FLASH_TOOLS = ''\
+' Flash tools (spiway & syscon flasher) are experimental! Be careful.'\
 
 STR_ABOUT_SPIWAY = 'About SPIway'
 STR_INFO_SPIWAY = ''\
