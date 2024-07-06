@@ -39,7 +39,7 @@ NOR_PARTITIONS = {
 	"emc_ipl_b"		: {"o": 0x082000,	"l": 0x7E000,	"n":"emc_ipl_b"},
 	"usb_pdc_a"		: {"o": 0x100000,	"l": 0x10000,	"n":"usb_pdc_a"},
 	"usb_pdc_b"		: {"o": 0x110000,	"l": 0x10000,	"n":"usb_pdc_b"},
-	"unk"			: {"o": 0x111000,	"l": 0xB3000,	"n":"unknown"},
+	"unk"			: {"o": 0x120000,	"l": 0xA4000,	"n":"unknown"},
 	"nvs"			: {"o": 0x1C4000,	"l": 0x0C000,	"n":"nvs"},
 	"reserved"		: {"o": 0x1D0000,	"l": 0x30000,	"n":"reserved"},
 }
