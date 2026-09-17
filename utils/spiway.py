@@ -4,7 +4,7 @@
 # part of ps5 wee tools project
 #==========================================================
 import time
-from lang._i18n_ import *
+from lang.lang import *
 from utils.serial import WeeSerial
 
 

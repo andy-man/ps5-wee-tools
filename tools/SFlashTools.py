@@ -3,7 +3,7 @@
 # part of ps5 wee tools project
 #==============================================================
 import os, time
-from lang._i18n_ import *
+from lang.lang import *
 import utils.utils as Utils
 import utils.sflash as SFlash
 import utils.slb2 as BLS
@@ -226,11 +226,12 @@ def screenValidate(file):
 			print(UI.cyan(' #%d %s'%(i,k)))
 			data = SFlash.getNorPartition(f, k)
 			head = BLS.getGet2BLSInfo(data)['header']
-			md5 = Utils.getMD5(data)
 			hash_list = SFlash.getDataByPartition(k)
+			md5 = SFlash.getBlsMD5(data)
+			md5_status = STR_OK if md5 in hash_list else UI.warning('??')
 			info = {
 				'Magic'		: STR_OK if 'magic' in head else STR_FAIL,
-				'MD5'		: '%s | %s'%(md5, STR_OK if md5 in hash_list else UI.warning('??')),
+				'MD5'		: '%s | %s'%(md5, md5_status),
 				'Size'		: '%d bytes'%head['size'] if 'size' in head else STR_FAIL,
 				'Entries'	: head['entries'] if 'entries' in head else STR_FAIL,
 			}
@@ -262,14 +263,18 @@ def screenSFlashTools(file):
 	
 	info = SFlash.getSFlashInfo(file)
 	if info:
-		info['Board ID'] = UI.highlight(info['Board ID'])
 		UI.showTable(info)
 	else:
 		return Tools.screenFileSelect(file)
 	
 	print(UI.getTab(STR_ACTIONS))
 	
-	UI.showMenu(MENU_NOR_ACTIONS,1)
+	menu = list(MENU_SFLASH_ACTIONS)
+	for i in range(3, 9):
+		menu[i] = UI.dark(menu[i])
+	UI.showMenu(menu,1)
+	print(UI.DIVIDER)
+	print(UI.dark(' u: '+STR_RESEARCH_UPLOAD))
 	print(UI.DIVIDER)
 	UI.showMenu(MENU_EXTRA)
 	
@@ -283,13 +288,26 @@ def screenSFlashTools(file):
 	    screenExtractNorDump(file)
 	elif choice == '3':
 	    screenBuildNorDump(os.path.dirname(file) + os.sep + SFlash.getNorData(file, 'SN', True))
-	elif choice == '4':
+	elif choice in ['4','5','6','7','8','9','u']:
+	    UI.setStatus(STR_NIY)
+	elif choice == '10':
 	    screenValidate(file)
 	
 	elif choice == 's':
 	    return Tools.screenFileSelect(file)
 	elif choice == 'f':
 		return Tools.screenNorFlasher(file)
+	elif choice == 'r':
+		fpath = os.path.realpath(file)
+		new_name = SFlash.getCanonicalName(file)
+		if new_name:
+			new_fpath = os.path.join(os.path.dirname(fpath), new_name + '.bin')
+			if not os.path.exists(new_fpath):
+				os.rename(fpath, new_fpath)
+				file = new_fpath
+				UI.setStatus(STR_RENAMED%new_name)
+			else:
+				UI.setStatus(STR_FILE_EXISTS)
 	elif choice == 'm':
 	    return Tools.screenMainMenu()
 	

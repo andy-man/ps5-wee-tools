@@ -5,7 +5,7 @@
 import sys
 import tools.Tools as Tools
 import tools.SFlashTools as SFlashTools
-from lang._i18n_ import UI
+from lang.lang import UI
 
 
 

@@ -3,9 +3,10 @@
 # part of ps5 wee tools project
 #==========================================================
 import hashlib, os, math, sys, ctypes
-from lang._i18n_ import *
-import lang._i18n_ as Lang
+from lang.lang import *
+import lang.lang as Lang
 import utils.utils as Utils
+import utils.slb2 as SLB2
 import data.data as Data
 
 
@@ -65,16 +66,16 @@ NOR_AREAS = {
 	
 	'EAP_MGC':	{'o':0x1C75FC,	'l':4,			't':'b',	'n':b'\xE5\xE5\xE5\x01'},		# Eap key magic 1CB1FC - 1C81FC = 3000 | 1C81FC - 1C75FC = C00
 	
-	'FW_F_U':	{'o':0x1C8068,	'l':4,			't':'b',	'n':'Factory FW upper'},		#
+	'FW_U':		{'o':0x1C8068,	'l':4,			't':'b',	'n':'FW upper'},				#
 	
 	'FW_M':		{'o':0x1C8C10,	'l':8,			't':'b',	'n':'Minimum FW'},				#
 	'FW_M_TS':	{'o':0x1C8C18,	'l':8,			't':'b',	'n':'Minimum FW timestamp'},	# ??
 	
-	'FW':		{'o':0x1C8C20,	'l':8,			't':'b',	'n':'Current FW'}, 				#
-	'FW_TS':	{'o':0x1C8C28,	'l':8,			't':'b',	'n':'Current FW timestamp'}, 	# ??
+	'FW_F':		{'o':0x1C8C20,	'l':8,			't':'b',	'n':'Factory FW'}, 				#
+	'FW_F_TS':	{'o':0x1C8C28,	'l':8,			't':'b',	'n':'Factory FW timestamp'}, 	# ??
 	
-	'FW_F':		{'o':0x1C8C30,	'l':8,			't':'b',	'n':'Factory FW'},				#
-	'FW_XX':	{'o':0x1C8C38,	'l':8,			't':'b',	'n':'Factory FW xx'},			# ??
+	'FW':		{'o':0x1C8C30,	'l':8,			't':'b',	'n':'Current FW'},				#
+	'FW_XX':	{'o':0x1C8C38,	'l':8,			't':'b',	'n':'Current FW xx'},			# ??
 	
 	'IDU':		{'o':0x1C9600,	'l':1,			't':'b',	'n':'IDU (Kiosk mode)'},		# B+ | On(01), Off(00/FF)
 }
@@ -89,6 +90,12 @@ MAGICS = {
 	"EAP2"		: {"o": 0x1C81FC,	"v":b'\xE5\xE5\xE5\x01'},
 	"EAP3"		: {"o": 0x1CB1FC,	"v":b'\xE5\xE5\xE5\x01'},
 }
+
+FLASHER_AREAS = [
+	{'n':'PS5 Full dump',		'o':0,								'l':DUMP_SIZE},
+	{'n':'PS5 NVS',				'o':NOR_PARTITIONS['nvs']['o'],		'l':NOR_PARTITIONS['nvs']['l']},
+	{'n':'PS5 UNK',				'o':NOR_PARTITIONS['unk']['o'],		'l':NOR_PARTITIONS['unk']['l']},
+]
 
 # MBR parser
 
@@ -199,6 +206,73 @@ def getDataByPartition(name):
 
 
 
+def getBlsMD5byPartition(file, part):
+
+	data = getNorPartition(file, part)
+	if not data:
+		return ''
+
+	return getBlsMD5(data)
+
+
+def getBlsMD5(data):
+
+	if not data: return ''
+
+	head = SLB2.getGet2BLSInfo(data)['header']
+	if not head or 'size' not in head:
+		return ''
+
+	return Utils.getMD5(data[:head['size']])
+
+
+def getBlsMd5Status(file, part, hash_db):
+
+	md5 = getBlsMD5byPartition(file, part)
+	return STR_OK if md5 and md5 in hash_db else STR_FAIL
+
+
+
+def getEmcMetaData(data):
+
+	meta_version = SLB2.getGetEntryByName(data, 'C0008001')
+	return meta_version if meta_version else b''
+
+
+def getEmcVersion(meta_data):
+
+	if not meta_data or len(meta_data) < 12:
+		return '-'
+	v = meta_data[0x0A:0x0A+6]
+	return '%d.%d.%d'%(int.from_bytes(v[4:],'little'), int.from_bytes(v[2:4],'little'), int.from_bytes(v[0:2],'little'))
+
+
+def getEmcVersions(file):
+
+	return {slot: getEmcVersion(getEmcMetaData(getNorPartition(file, 'emc_ipl_' + slot))) for slot in ('a', 'b')}
+
+
+
+def getUsbPdcMetaData(data):
+
+	meta_version = SLB2.getGetEntryByName(data, 'C0058100')
+	return meta_version if meta_version else b''
+
+
+def getUsbPdcVersion(meta_data):
+
+	if not meta_data or len(meta_data) < 12:
+		return '-'
+	v = meta_data
+	return '%d.%d.%d' % (v[0], v[8], v[11])
+
+
+def getUsbPdcVersions(file):
+
+	return {slot: getUsbPdcVersion(getUsbPdcMetaData(getNorPartition(file, 'usb_pdc_' + slot))) for slot in ('a', 'b')}
+
+
+
 def checkMagic(data, key):
 	if len(data) <= 0:
 		return False
@@ -240,12 +314,22 @@ def getPartitionsInfo(f):
 
 
 def getNorFW(f, digits = 4):
-	fw_c = getNorData(f, 'FW')[:digits-1:-1]
-	fw_m = getNorData(f, 'FW_M')[:digits-1:-1]
-	fw_f = getNorData(f, 'FW_F')[:digits-1:-1]
+	fw_c = getNorData(f, 'FW')[::-1][:digits]
+	fw_m = getNorData(f, 'FW_M')[::-1][:digits]
+	fw_f = getNorData(f, 'FW_F')[::-1][:digits]
 	
 	return {'c':Utils.hex(fw_c,'.'), 'f':Utils.hex(fw_f,'.'), 'm':Utils.hex(fw_m,'.')}
 
+
+
+def getMobo(board):
+	#EDM-010 always has board[4] = 0x04 all others 0x01
+	dvd = { 0x00:'?', 0x01:STR_YES, 0x03:STR_NO}
+	return {
+		'name':'EDM-0%dX'%board[2],
+		'bd':dvd[board[5]] if board[5] in dvd else dvd[0x00],
+		'type':'Retail' if board[1] == 2 else 'Non-Retail'
+	}
 
 
 
@@ -291,24 +375,60 @@ def getNorDataB(file, key, decode = False):
 def getSFlashInfo(file = '-'):
 	with open(file, 'rb') as f:
 		
-		active_slot = 'A' if getNorData(f, 'ACT_SLOT')[0] == 0x00 else 'B'
+		act_slot = 'a' if getNorData(f, 'ACT_SLOT')[0] == 0x00 else 'b'
+		prev_slot = 'b' if act_slot == 'a' else 'a'
+		active_slot = act_slot.upper()
 		model = getNorData(f, 'MODEL')
 		region = getConsoleRegion(f)
 		fw = getNorFW(f, 4)
 		
+		sku = getNorData(f, 'SKU', True)
+		board = getNorData(f, 'BOARD_ID')
+		mobo = getMobo(board)
+
+		emc_versions = getEmcVersions(f)
+		usb_pdc_versions = getUsbPdcVersions(f)
+		emc_act_status = getBlsMd5Status(f, 'emc_ipl_' + act_slot, Data.EMC_IPL_MD5)
+		emc_prev_status = getBlsMd5Status(f, 'emc_ipl_' + prev_slot, Data.EMC_IPL_MD5)
+		usb_act_status = getBlsMd5Status(f, 'usb_pdc_' + act_slot, Data.USB_PDC_MD5)
+		usb_prev_status = getBlsMd5Status(f, 'usb_pdc_' + prev_slot, Data.USB_PDC_MD5)
+		
 		info = {
-			'FILE'			: os.path.basename(file),
-			'MD5'			: Utils.getFileMD5(file),
-			'Board ID'		: Utils.hex(getNorData(f, 'BOARD_ID'),':'),
-			'Model'			: PS_MODELS[model] if model in PS_MODELS else '[%02X] %s'%(int.from_bytes(model,'big'), STR_UNKNOWN),
-			'SKU / Slot'	: getNorData(f, 'SKU', True) + ' / [%s]'%active_slot,
-			'Region'		: '[{}] {}'.format(region[0], region[1]),
-			'SN / Mobo SN'	: getNorData(f, 'SN', True)+' / '+getNorData(f, 'MB_SN', True),
-			'Kiban ID'		: getNorData(f, 'KIBAN', True),
-			'FW (current)'	: fw['c'],
-			'FW (min/fac)'	: fw['m'] + ' / ' + fw['f'],
-			'MAC LAN'		: Utils.hex(getNorData(f, 'MAC'),':'),
-			'MAC WiFi'		: Utils.hex(getNorData(f, 'MAC2'),':'),
+			'FILE'				: os.path.basename(file),
+			'MD5'				: Utils.getFileMD5(file),
+			'Mobo [Board ID]'	: mobo['name'] + ' BD:' + mobo['bd'] + ' ' + mobo['type'] + ' [' + UI.highlight(Utils.hex(board, ':')) + ']',
+			'Model'				: PS_MODELS[model] if model in PS_MODELS else '[%02X] %s'%(int.from_bytes(model,'big'), STR_UNKNOWN),
+			'SKU / Slot'		: sku + ' / [%s]'%active_slot,
+			'Region'			: '[{}] {}'.format(region[0], region[1]),
+			'SN / Mobo SN'		: getNorData(f, 'SN', True)+' / '+getNorData(f, 'MB_SN', True),
+			'Kiban ID'			: getNorData(f, 'KIBAN', True),
+			'FW (current)'		: fw['c'],
+			'FW (min/fac)'		: fw['m'] + ' / ' + fw['f'],
+			'EMC'				: '[%s] %s - %s / [%s] %s - %s'%(act_slot.upper(), emc_versions[act_slot], emc_act_status, prev_slot.upper(), emc_versions[prev_slot], emc_prev_status),
+			'USB PDC'			: '[%s] %s - %s / [%s] %s - %s'%(act_slot.upper(), usb_pdc_versions[act_slot], usb_act_status, prev_slot.upper(), usb_pdc_versions[prev_slot], usb_prev_status),
+			'MAC LAN'			: Utils.hex(getNorData(f, 'MAC'),':'),
+			'MAC WiFi'			: Utils.hex(getNorData(f, 'MAC2'),':'),
 		}
 	
 	return info
+
+
+
+def getCanonicalName(fpath):
+	with open(fpath, 'rb') as f:
+		
+		sku = getNorData(f, 'SKU', True)[:9].replace('-','')
+		sn = getNorData(f, 'SN', True)
+		sn = sn if sn else '0'*10
+		#sb = getSouthBridge(f)['ic'][-2:]
+		mobo = getMobo(getNorData(f, 'BOARD_ID'))['name']
+		
+		model = getNorData(f, 'MODEL')
+		model = PS_MODELS[model] if model in PS_MODELS else '[%02X] %s'%(int.from_bytes(model,'big'), STR_UNKNOWN)
+		model = model.split()[0].upper()
+		
+		slot = 'a' if getNorData(f, 'ACT_SLOT') == b'\x00' else 'b'
+		fw = getNorFW(f,2)
+		fws = 'F'+fw['f']+'_M'+fw['m']
+	
+	return '_'.join([sku, sn, 'xxGG', mobo, fw['c'], slot, fws, model]).upper()
