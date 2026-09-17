@@ -70,6 +70,21 @@ def getGet2BLSInfo(data):
 
 
 
+def getGetEntryByName(data, name):
+
+	if not data:
+		return b''
+	
+	for entry in getGet2BLSInfo(data).get('entries', []):
+		if entry.get('name') == name:
+			offset = entry.get('offset')
+			size = entry.get('size')
+			return data[offset:offset+size]
+	
+	return b''
+
+
+
 def build2BLS(files):
 	
 	if len(files) == 0:

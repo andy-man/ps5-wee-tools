@@ -3,6 +3,12 @@
 # part of ps5 wee tools project
 #==========================================================
 
+MENU_CODE_READER = [
+	'Load error codes',
+	'Clear error log',
+	'Open errlog file',
+]
+
 MENU_FLASHER = [
 	'Read all',
 	'Read area',
@@ -30,6 +36,8 @@ MENU_TOOL_SELECTION = [
 	'File browser',
 	'Terminal (UART)',
 	'sFlash r/w (SPIway by Judges)',
+	'EMC Error Code Reader',
+	"Change app's language",
 	'Exit',
 ]
 
@@ -37,6 +45,7 @@ MENU_FILE_SELECTION = {
 	'a':'Show all files / Toggle filters [bin,pup]',
 	'f':'Build sflash0 dump',
 	'b':'Build 2BLS/PUP',
+	'r':'Batch rename (extract dump info to filename)',
 	'c':'Compare files in current folder',
 	'm':'Go to [Main menu]',
 }
@@ -50,13 +59,20 @@ MENU_EXTRA_FLASHER = {
 MENU_EXTRA = {
 	's':'Select another file',
 	'f':'Flash this file (full/parts) back to console',
+	'r':'Rename file to cannonical name',
 	'm':'Open Main menu',
 }
 
-MENU_NOR_ACTIONS = [
+MENU_SFLASH_ACTIONS = [
 	'Flags (IDU, Model, etc)',
 	'Extract sFlash\'s partitions',
 	'Build dump from extracted files',
+	'Clone MAC (LAN)',
+	'Regenerate dump',
+	'Show EMC errlog cache',
+	'Clear EMC errlog',
+	'Patch SouthBridge',
+	'Patch USB (pdc)',
 	'Base validation and entropy stats',
 ]
 
@@ -67,9 +83,17 @@ MENU_SPW_ACTS = {
 	'erase':	'Erasing',
 }
 
+STR_APP_NAME			= 'PS5 Wee Tools'
+STR_LANGUAGE			= 'Language'
+STR_ERROR_LOG			= 'Error log'
 STR_SECONDS				= '%0.0f seconds'
 STR_PORTS_LIST			= 'Serial ports'
 STR_MAIN_MENU			= 'Main menu'
+STR_RESEARCH_UPLOAD		= 'Upload dump for research'
+STR_Y_OR_CANCEL			= '[y - yes, * - cancel]'
+STR_INFO_FW_LINK		= ''\
+' Put valid emc/usb_pdc files to /fws/ folder\n'\
+' You can download it from this repo:\n '
 STR_FILE_LIST			= 'Files list'
 STR_NOR_INFO			= 'NOR dump info'
 STR_ADDITIONAL			= 'Additional tools'
@@ -120,6 +144,7 @@ STR_ENCRYPTING			= ' Encrypting'
 STR_PATCHING			= ' Patching'
 STR_EXPERIMENTAL		= ' * - experimental functions'
 STR_PERFORMED			= ' Performed action: '
+STR_RENAMED				= ' Renamed to %s'
 
 STR_EMPTY_FILE_LIST		= ' File list is empty'
 STR_NO_FOLDER			= ' Folder %s doesn\'t exists'
@@ -136,7 +161,7 @@ STR_SET_TO				= ' %s was set to [%s]'
 STR_ABORT				= ' Action was aborted'
 STR_FILENAME			= ' Filename: '
 
-STR_NIY					= ' Function is not implemented yet'
+STR_NIY					= ' This feature is available in PRO version only'
 STR_CLEAN_FLAGS			= ' Clean all system flags'
 STR_UNK_FILE_TYPE		= ' Unknown file type'
 STR_UNK_CONTENT			= ' Unknown content'
@@ -157,6 +182,7 @@ STR_FW_VERSION			= ' FW version %s / Active slot %s'
 
 STR_INCORRECT_SIZE		= ' %s - incorrect dump size!'
 STR_FILE_NOT_EXISTS		= ' File %s doesn\'t exist!'
+STR_FILE_EXISTS			= ' Filename already exists!'
 STR_ERROR_FILE_REQ		= ' You need to select file first'
 STR_SAVED_TO			= ' Saved to %s'
 STR_ERROR_INPUT			= ' Incorrect input'
@@ -205,6 +231,21 @@ STR_SPW_ERR_OVERFLOW	= 'Chip has %d blocks. Writing outside the chip\'s capacity
 
 STR_CANT_USE			= 'Can\'t use this'
 STR_DIFF_SN				= 'Serial numbers are different!'
+
+STR_UNKNOWN_CODE		= 'Unknown code - please report'
+STR_NO_ERRORS			= ' No errors'
+STR_TOTAL				= ' Total: %d'
+STR_ERRLOG_CLEANED		= ' Error log was cleaned'
+
+#						   00 00000000 00000000 00000000 00000000 0000 0000 0000 0000
+STR_ERRLOG_HEAD			= '## Code     Rtc      PowState UpCause  SeqN DvPm TSoC TEnv'
+STR_ABOUT_CODEREADER	= 'About EMC code reader'
+STR_INFO_CODEREADER		= ''\
+' PS5 errlog [0-3F] command serves to get error\'s codes.\n'\
+' Make first read then clean and reboot to get actual codes.\n'\
+' Log to file is enabled - you will not miss anything.\n'\
+'\n'\
+' Help to improve - report your codes here:\n '
 
 STR_INFO_FLASH_TOOLS = ''\
 ' Flash tools (spiway & syscon flasher) are experimental! Be careful.'\

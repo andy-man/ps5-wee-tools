@@ -31,6 +31,7 @@ NOR tool
 Common
 * File browser
 * Terminal (UART) with highlighting
+* EMC Error Codes
 * sFlash r/w (SPIway by Judges)
 * Multy files compare
 * Pack / Unpack 2BLS files
@@ -41,16 +42,18 @@ Don't use if you don't understand what is it for!
 
 [Abkarino](https://github.com/AbkarinoMHM), 
 [zecoxao](https://github.com/zecoxao), 
-[TheCod3r](https://www.youtube.com/@TheCod3r)
+[TheCod3r](https://www.youtube.com/@TheCod3r),
+ElectroSoft
 
 And of course [PSDevWiki](https://www.psdevwiki.com/ps5/)
 
 ## Donate
 
+* **[Paypal/Ko-fi](https://ko-fi.com/andymandev)**
 * **[Patreon](https://patreon.com/andy_man)**
 * **[Boosty](https://boosty.to/andy_man/donate)**
 * **[YandexMoney](https://yoomoney.ru/to/410011555252085)**
-* **Bitcoin**: 39VaMnFqCQo751mvDc3M7ADVty71q2tWDm 
+* **Bitcoin**: 39VaMnFqCQo751mvDc3M7ADVty71q2tWDm
 * **TronLink**: TSYe254HXFapEwAAbZFkTHGewezZmnCKnU
 
 ## Links
@@ -59,11 +62,25 @@ And of course [PSDevWiki](https://www.psdevwiki.com/ps5/)
 
 ## Changelog
 
+### v0.1.8
+* 14.00 support
+* 20 languages + auto detect system lang
+* Config file (lang, sound, ports)
+* Beeps for SPI flasher
+* Dump validation: 2BLS payload MD5
+* Dump info: EMC / USB PDC versions and MD5 status
+
+### v0.1.7
+* EMC errlog reader
+* EMC Log viewer
+* Code optimization
+
 ### v0.1.5
 * FW detection bugfix
 * Slim model support
 * Flags toggle: active slot
 * Region #18 added
+* UART bug fix
 * Code optimization
 * Minor bug fixes
 

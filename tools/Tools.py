@@ -3,7 +3,8 @@
 # part of ps5 wee tools project
 #==============================================================
 import os, sys, time, datetime
-from lang._i18n_ import *
+from lang.lang import *
+from utils.utils import Beep
 from utils.serial import WeeSerial
 from utils.spiway import SpiFlasher
 import utils.utils as Utils
@@ -13,9 +14,10 @@ import tools.SFlashTools as SFlashTools
 
 
 
+
 def screenNorFlasher(path = '', port = '', act = '', mode = False):
 	
-	port = port if port else screenChoosePort()
+	port = port if port else screenChoosePort('spiway')
 	if not port:
 		UI.setStatus(STR_NO_PORTS)
 		return
@@ -32,29 +34,32 @@ def screenNorFlasher(path = '', port = '', act = '', mode = False):
 		print(UI.warning(STR_PORT_UNAVAILABLE))
 		print(UI.warning(flasher.err))
 		flasher.close()
+		Beep.error()
 		input(STR_BACK)
 		return
 	
 	ping = flasher.ping()
 	ver_maj, ver_min = ping['VER']
 	UI.showTable({
-		'Version':'%d.%02d'%(ver_maj, ver_min),
-		'Memory':'%d bytes'%ping['RAM'],
+		'Version'	: '%d.%02d'%(ver_maj, ver_min),
+		'Memory'	: '%d bytes'%ping['RAM'],
 	})
 	print()
 	
 	if ping['VER'] != flasher.VERSION:
 		flasher.close()
+		Beep.warning()
 		input(STR_BACK)
 		return
 	
 	info = flasher.getChipInfo()
 	
-	if flasher.Config.IC_ID == 0:
+	if flasher.Config.IC_ID <= 0:
 		UI.showTable({
-			'Device ID': '0x%02X'%flasher.Config.VENDOR_ID,
-			'Vendor ID': '0x%04X'%flasher.Config.DEVICE_ID,
+			'Device ID'	: '0x%02X'%flasher.Config.VENDOR_ID,
+			'Vendor ID'	: '0x%04X'%flasher.Config.DEVICE_ID,
 		})
+		Beep.warning()
 		input(STR_BACK)
 		return
 	
@@ -66,19 +71,20 @@ def screenNorFlasher(path = '', port = '', act = '', mode = False):
 	if act != 'read' and path and os.path.isfile(path):
 		print(UI.highlight(STR_FILE_INFO)+':\n')
 		UI.showTable({
-			'File':		os.path.basename(path),
-			'MD5':		Utils.getFileMD5(path),
-			'Size':		'%d MB'%(os.stat(path).st_size // (1024**2)),
+			'File'	: os.path.basename(path),
+			'MD5'	: Utils.getFileMD5(path),
+			'Size'	: '%d MB'%(os.stat(path).st_size // (1024**2)),
 		})
 		print(end=('\n' if act else ''))
 	
 	# Perform action
 	
 	cfg = flasher.Config
+	success = True
 	
 	if act:
 		print(' '+UI.highlight(MENU_SPW_ACTS[act] if act in MENU_SPW_ACTS else STR_UNKNOWN)+'\n')
-		block, count = chooseBNC(mode, cfg.BLOCK_SIZE)
+		block, count = chooseBNC(mode, cfg.BLOCK_SIZE, SFlash.FLASHER_AREAS)
 	
 	if act == 'read':
 		sfx = '_full' if block == 0 and count == 0 else '_b%d-%d'%(block,block+count)
@@ -92,6 +98,7 @@ def screenNorFlasher(path = '', port = '', act = '', mode = False):
 				file.seek(cfg.BLOCK_SIZE * block)
 				file.write(data)
 		else:
+			success = False
 			path = ''
 	
 	elif act == 'write':
@@ -99,9 +106,10 @@ def screenNorFlasher(path = '', port = '', act = '', mode = False):
 			with open(path,"rb") as file:
 				file.seek(cfg.BLOCK_SIZE * block)
 				data = file.read(cfg.BLOCK_SIZE * (count if count > 0 else cfg.BLOCK_COUNT))
-				flasher.writeChip(data, False, block, count)
+				success = flasher.writeChip(data, False, block, count)
 				print()
 		else:
+			success = False
 			UI.setStatus(STR_FILE_NOT_EXISTS%path)
 	
 	elif act == 'verify':
@@ -110,15 +118,19 @@ def screenNorFlasher(path = '', port = '', act = '', mode = False):
 				file.seek(cfg.BLOCK_SIZE * block)
 				data = file.read(cfg.BLOCK_SIZE * (count if count else cfg.BLOCK_COUNT))
 				vdata = flasher.readChip(block, count)
-				print('\n'+STR_VERIFY+': '+(STR_OK if data == vdata else STR_FAIL)+'\n')
+				success = data == vdata
+				print('\n'+STR_VERIFY+': '+(STR_OK if success else STR_FAIL)+'\n')
 		else:
+			success = False
 			UI.setStatus(STR_FILE_NOT_EXISTS%path)
 	
 	elif act == 'erase':
-		flasher.eraseChip(block, count)
+		success = flasher.eraseChip(block, count)
 		print()
 	
 	if act:
+		if success: Beep.success()
+		else: Beep.warning()
 		print(STR_DONE)
 	
 	flasher.close()
@@ -127,9 +139,9 @@ def screenNorFlasher(path = '', port = '', act = '', mode = False):
 	if act == 'read' and path and os.path.isfile(path):
 		print('\n'+UI.highlight(STR_FILE_INFO)+':\n')
 		UI.showTable({
-			'File': os.path.basename(path),
-			'MD5': Utils.getFileMD5(path),
-			'Size': '%d MB'%(os.stat(path).st_size // 1024**2),
+			'File'	: os.path.basename(path),
+			'MD5'	: Utils.getFileMD5(path),
+			'Size'	: '%d MB'%(os.stat(path).st_size // 1024**2),
 		})
 	
 	# Action done
@@ -162,10 +174,10 @@ def screenNorFlasher(path = '', port = '', act = '', mode = False):
 		mode = int(choice) - 10
 		
 	elif choice == 's':
-	    path = screenFileSelect(path, False, True)
+	    path = screenFileSelect(path, ['bin'], True)
 	elif choice == 'f':
 		if path and os.path.isfile(path):
-			return SFlashTools.screenSFlashTools(path)
+			return launchTool(path)
 		else:
 			UI.setStatus(STR_FILE_NOT_EXISTS%path)
 	elif choice == 'm':
@@ -177,7 +189,7 @@ def screenNorFlasher(path = '', port = '', act = '', mode = False):
 
 def screenSerialMonitor(port = '', emc_mode = False):
 	
-	port = port if port else screenChoosePort()
+	port = port if port else screenChoosePort('uart')
 	if not port:
 		UI.setStatus(STR_NO_PORTS)
 		return
@@ -239,43 +251,84 @@ def screenSerialMonitor(port = '', emc_mode = False):
 
 
 
-def screenChoosePort():
-	UI.clearScreen()
-	print(TITLE + UI.getTab(STR_WARNING))
-	print(UI.warning(STR_INFO_FLASH_TOOLS))
-	
-	print(UI.getTab(STR_PORTS_LIST))
-	
+def screenChoosePort(type):
+
 	ports = WeeSerial.getPortList()
+
+	def_port = APP_CONFIG.get('port-'+type)
 	
-	for i in range(len(ports)):
-		port = ports[i]
-		print(' % 2s: %s - %s'%(i+1, port['port'].ljust(6), port['desc']))
-    
-	if not len(ports):
-		print(UI.warning(STR_NO_PORTS))
-		input(STR_BACK)
-		return ''
-    
-	UI.showStatus()
-	
-	try:
-		c = input(STR_CHOICE)
+	if def_port:
+		for port in ports:
+			if port['port'] == def_port:
+				return def_port
+
+	while True:
+		UI.clearScreen()
+		print(TITLE + UI.getTab(STR_WARNING))
+		print(UI.warning(STR_INFO_FLASH_TOOLS))
 		
-		if c == '':
-			return
+		print(UI.getTab(STR_PORTS_LIST))
 		
-		c = int(c)
+		for i, port in enumerate(ports):
+			print(' % 2s: %s - %s'%(i+1, port['port'].ljust(6), port['desc']))
 		
-		if c > 0 and c <= len(ports):
-			return ports[c-1]['port']
+		if not len(ports):
+			print(UI.warning(STR_NO_PORTS))
+			input(STR_BACK)
+			break
+		
+		UI.showStatus()
+		
+		choice = input(STR_CHOICE)
+
+		if choice == '':
+			break
+
+		try: num = int(choice)
+		except: num = -1
+			
+		if num > 0 and num <= len(ports):
+			port = ports[num-1]['port']
+			APP_CONFIG.set('port-'+type, port)
+			APP_CONFIG.save()
+			return port
 		else:
 			UI.setStatus(STR_ERROR_INPUT)
-	except:
-		UI.setStatus(STR_ERROR_INPUT)
-	
-	return screenChoosePort()
 
+	return ''
+
+
+
+def screenSelectLanguage():
+
+	while True:
+		UI.clearScreen()
+		print(TITLE+UI.getTab(STR_LANGUAGE))
+		
+		lang_codes = []
+		for i, key in enumerate(LANG_DATA):
+			lang_codes.append(key)
+			option = f' {i+1:2}: [{key}] {LANG_DATA[key]["LANGUAGE"]}'
+			print(UI.highlight(option) if key == LANG_CODE else option)
+		
+		UI.showStatus()
+		
+		choice = input(STR_CHOICE).lower()
+		
+		try: num = int(choice)
+		except: num = -1
+		
+		if num > 0 and num <= len(LANG_DATA):
+			code = lang_codes[num-1]
+			APP_CONFIG.set('lang', code)
+			APP_CONFIG.save()
+			set_language(code)
+			UI.setStatus(f'{STR_LANGUAGE}: {LANG_DATA[code]["LANGUAGE"]}')
+			break
+		else:
+			UI.setStatus(STR_ERROR_CHOICE)
+	
+	return code
 
 
 def screenMainMenu():
@@ -295,6 +348,10 @@ def screenMainMenu():
 	elif choice == '3':
 		screenNorFlasher()
 	elif choice == '4':
+		screenErrorCodes()
+	elif choice == '5':
+		screenSelectLanguage()
+	elif choice == '6':
 		return quit()
 	else:
 		UI.setStatus(STR_ERROR_CHOICE)
@@ -303,16 +360,17 @@ def screenMainMenu():
 
 
 
-def screenFileSelect(path = False, all = False, ret = False):
+def screenFileSelect(path = False, filter = [], ret = False):
+	
 	UI.clearScreen()
-	print(TITLE + UI.getTab(STR_FILE_LIST+' '+('[all]' if all else '[bin, pup]')))
+	print(TITLE + UI.getTab(STR_FILE_LIST+' '+('[%s]'%(', '.join(filter)) if len(filter) else '')))
 	
 	path = path if path and os.path.exists(path) else os.getcwd()
 	path = path if os.path.isdir(path) else os.path.dirname(path)
 	
 	print(Clr.fg.l_grey+(' %s\n'%path)+Clr.reset)
 	
-	list = [os.path.dirname(path)]
+	flist = [os.path.dirname(path)]
 	print('  0: '+os.sep+'..')
 	
 	dirs = [x for x in os.listdir(path) if os.path.isdir(os.path.join(path, x))]
@@ -322,13 +380,19 @@ def screenFileSelect(path = False, all = False, ret = False):
 	files.sort()
 	
 	for d in dirs:
-		list.append(os.path.join(path, d))
-		print((' %2d: '+os.sep+'%s'+os.sep)%(len(list)-1,d))
+		flist.append(os.path.join(path, d))
+		print((' %2d: '+os.sep+'%s'+os.sep)%(len(flist)-1,d))
 	
 	for f in files:
-		if all or f.lower().endswith('.bin') or f.lower().endswith('.pup'):
-			list.append(os.path.join(path, f))
-			print(' %2d: %s'%(len(list)-1,f))
+		if len(filter):
+			for k in filter:
+				if f.lower().endswith(k):
+					flist.append(os.path.join(path, f))
+					print(' %2d: %s'%(len(flist)-1,f))
+					break
+		else:
+			flist.append(os.path.join(path, f))
+			print(' %2d: %s'%(len(flist)-1,f))
 	
 	print(UI.DIVIDER)
 	UI.showMenu(MENU_FILE_SELECTION)
@@ -337,32 +401,40 @@ def screenFileSelect(path = False, all = False, ret = False):
 	choice = input(STR_CHOICE)
 	
 	if choice == 'a':
-		all = False if all else True
+		filter = [] if len(filter) else ['bin','pup']
 	elif choice == 'f':
-		AdvSFlashTools.screenBuildNorDump(path)
+		SFlashTools.screenBuildNorDump(path)
 	elif choice == 'b':
 		screenBuild2BLS(path)
 	elif choice == 'c':
 		file_list = [os.path.join(path, x) for x in files] # Force bin only: if x.lower().endswith('.bin')
 		screenCompareFiles(file_list)
+	elif choice == 'r':
+		for file in files:
+			fpath = os.path.join(path, file)
+			f_size = os.stat(fpath).st_size
+			new_name = ''
+			if f_size == SFlash.DUMP_SIZE:
+				new_name = SFlash.getCanonicalName(fpath)
+			
+			if new_name:
+				new_fpath = os.path.join(path, new_name + '.bin')
+				#i = 1; while os.path.exists(new_fpath): new_fpath = os.path.join(path, new_name + '_%d.bin'%i)
+				if not os.path.exists(new_fpath):
+					os.rename(fpath, new_fpath)
 	elif choice == 'm':
 		return screenMainMenu()
 	elif choice != '':
 		try:
-			ind = int(choice)
-			if ind >= 0 and ind < len(list):
-				path = list[ind]
-				if not os.path.isdir(path):
-					if ret:
-						return path
-					else:
-						launchTool(path)
+			p = flist[int(choice)]
+			if os.path.isfile(p):
+				return p if ret else launchTool(p)
 			else:
-				UI.setStatus(STR_ERROR_CHOICE)
+				path = p
 		except Exception as error:
-			UI.setStatus(' %s'%error)
+			UI.setStatus(STR_ERROR_CHOICE)
 	
-	screenFileSelect(path, all)
+	return screenFileSelect(path, filter, ret)
 
 
 
@@ -490,15 +562,12 @@ def screenHelp():
 
 
 
-def chooseBNC(mode = 0, block_size = 0, syscon = False):
+def chooseBNC(mode = 0, block_size = 0, areas = []):
 	
 	block = 0
 	count = 0
 	
-	if mode == 1:
-		areas = [
-			{'n':'PS5 Full dump',	'o':0,	'l':SFlash.DUMP_SIZE},
-		]
+	if mode == 1 and len(areas):
 		for i in range(len(areas)):
 			areas[i]['b'] = areas[i]['o'] // block_size
 			areas[i]['c'] = areas[i]['l'] // block_size + (1 if areas[i]['l'] % block_size else 0)
@@ -535,13 +604,17 @@ def launchTool(path):
 	
 	if os.path.isdir(path):
 		if os.path.exists(os.path.join(path, Utils.INFO_FILE_SFLASH)):
-			return Tools.screenBuildNorDump(path)
+			return SFlashTools.screenBuildNorDump(path)
 		elif os.path.exists(os.path.join(path, Utils.INFO_FILE_2BLS)):
 			return screenBuild2BLS(path)
 		else:
 			#TODO: maybe open SPIway?
 			UI.setStatus(STR_UNK_CONTENT + ' {}'.format(path))
 			return 0
+	
+	f_name = os.path.basename(path)
+	if f_name.startswith('errlog') and f_name.endswith('.txt'):
+		return screenErrorCodes('', path)
 	
 	f_size = os.stat(path).st_size
 	with open(path,'rb') as f:
@@ -551,5 +624,235 @@ def launchTool(path):
 		return SFlashTools.screenSFlashTools(path)
 	elif header[0:len(BLS.SLB2_MAGIC)] == BLS.SLB2_MAGIC:
 		return screenUnpack2BLS(path)
+	elif header[0:4] == b'\x54\x14\xF5\xEE':
+		UI.setStatus(STR_NIY)
+		return 0
 	else:
 		UI.setStatus(STR_UNK_FILE_TYPE + ' {}'.format(path))
+
+
+
+def screenErrorCodes(port = '', action = ''):
+	
+	UI.clearScreen()
+	print(TITLE + UI.getTab(STR_ABOUT_CODEREADER))
+	print(UI.warning(STR_INFO_CODEREADER))
+	print(UI.dark('\n'+STR_NIY))
+	
+	if action in ['clear','load'] and not port:
+		
+		port = screenChoosePort('emc')
+		if not port:
+			action = ''
+			UI.setStatus(STR_NO_PORTS)
+		return screenErrorCodes(port, action)
+	
+	if action == 'clear':
+		
+		serial = WeeSerial(port)
+		serial.sendText(Utils.getEmcCmd('errlog clear'))
+		UI.setStatus(STR_ERRLOG_CLEANED)
+		serial.sp.close()
+		
+	elif action == 'load':
+		
+		serial = WeeSerial(port)
+		serial._clean()
+		
+		# Debug board
+		# serial.sp.readline()
+		
+		print(UI.getTab(STR_ERROR_LOG))
+		
+		log_file = datetime.datetime.now().strftime('errlog_%Y-%m-%d_%H-%M-%S.txt')
+		log = open(log_file, 'a')
+		lines = []
+		
+		for num in range(0, 0x40):
+			cmd = Utils.getEmcCmd('errlog %X'%num)
+			serial.sendText(cmd)
+			
+			resp = serial.sp.readline() # skip echo
+			log.write(resp.decode('utf-8','ignore'))
+			
+			resp = serial.sp.readline()
+			log.write(resp.decode('utf-8','ignore'))
+			
+			line = resp.strip(b'\x00').split(b':')[0].decode('utf-8','ignore')
+			
+			code = line.split()
+			if (len(code) <= 2 or code[0] != 'OK' or code[2] == 'FFFFFFFF'):
+				break
+			
+			lines.append(line)
+		
+		log.close()
+		UI.setStatus(STR_SAVED_TO%log_file)
+		
+		serial.sp.close()
+		
+		if len(lines):
+			printErrorLog(lines)
+		else:
+			print(UI.green(STR_NO_ERRORS))
+	
+	elif os.path.isfile(action):
+		
+		print(UI.getTab(STR_ERROR_LOG))
+		
+		with open(action, 'r') as f:
+			printErrorLog(f.readlines())
+		
+		print(UI.DIVIDER)
+		print(UI.highlight(STR_FILENAME + os.path.basename(action)))
+		
+		input(STR_BACK)
+		return screenErrorCodes(port)
+	
+	print(UI.getTab(STR_ACTIONS))
+	UI.showMenu(MENU_CODE_READER,1)
+	
+	print(UI.DIVIDER)
+	print(' 0:'+STR_GO_BACK)
+	
+	UI.showStatus()
+	
+	choice = input(STR_CHOICE)
+	action = ''
+	
+	if choice == '0':
+		return
+	elif choice == '1':
+		action = 'load'
+	elif choice == '2':
+		action = 'clear'
+	elif choice == '3':
+		action = screenFileSelect(False, ['txt'], True)
+	else:
+		UI.setStatus(STR_ERROR_CHOICE)
+	
+	screenErrorCodes(port, action)
+
+
+
+def getErrorCodeDesc(code):
+	return UI.dark(STR_NIY)
+
+
+
+def printErrorLog(errors):
+	
+	print(' '+UI.highlight(STR_ERRLOG_HEAD))
+	print(UI.DIVIDER_DASH)
+	
+	count = 0
+	
+	for error in errors:
+		
+		if not len(error):
+			continue
+		
+		c = error.split()
+		if (len(c) < 3 or c[0] != 'OK' or c[1] != '0'*8):
+			continue
+		
+		count += 1
+		v = c[2:]
+		
+		code		= v[0]
+		rtc			= v[1] if len(v) > 1 else '0'*8
+		PowState	= v[2] if len(v) > 2 else '0'*8
+		UpCause		= v[3] if len(v) > 3 else '0'*8
+		SeqNo		= v[4] if len(v) > 4 else '0'*4
+		DevPm		= v[5] if len(v) > 5 else '0'*4
+		TmpSoC		= v[6] if len(v) > 6 else '0'*4
+		TmpEnv		= v[7].split(':')[0] if len(v) > 7 else '0'*4
+		
+		
+		powerState = int(PowState, 16)
+		
+		osState = powerState >> 15 & 0xFF
+		osStateInfo = '-'
+		if osState == 0x00: osStateInfo = 'SYS_READY'
+		if osState == 0x01: osStateInfo = 'MAIN_ON_STANDBY'
+		if osState >= 0x02 and osState <= 0x0F: osStateInfo = 'RESERVED'
+		if osState >= 0x10 and osState <= 0x1F: osStateInfo = 'PSP'
+		if osState >= 0x20 and osState <= 0x3F: osStateInfo = 'BIOS'
+		if osState == 0x40: osStateInfo = 'EAP_READY'
+		if osState >= 0x41 and osState <= 0x4F: osStateInfo = 'EAP'
+		if osState >= 0x50 and osState <= 0xBF: osStateInfo = 'KERNEL'
+		if osState >= 0xC0 and osState <= 0xFE: osStateInfo = 'INIT'
+		if osState == 0xFF: osStateInfo = 'HOST_OS_OFF'
+		
+		sysState = powerState & 0xFFFF
+		sysStateInfo = '-'
+		if sysState == 0x00: sysStateInfo = 'AC_IN_L'
+		if sysState == 0x01: sysStateInfo = 'STANDBY'
+		if sysState == 0x02: sysStateInfo = 'PG2_ON'
+		if sysState == 0x03: sysStateInfo = 'EFC_ON'
+		if sysState == 0x04: sysStateInfo = 'EAP_ON'
+		if sysState == 0x05: sysStateInfo = 'SOC_ON'
+		if sysState == 0x06: sysStateInfo = 'ERROR_DET'
+		if sysState == 0x07: sysStateInfo = 'FATAL_ERROR'
+		if sysState == 0x08: sysStateInfo = 'NEVER_BOOT'
+		if sysState == 0x09: sysStateInfo = 'FORCE_OFF'
+		if sysState == 0x0A: sysStateInfo = 'BT_FW_DOWN'
+		
+		devPMinfo = '-'
+		if DevPm != 'F'*4:
+			devPM = int(DevPm, 16)
+			devPMinfo = []
+			if devPM & (1 << 0): devPMinfo.append('WLAN')
+			if devPM & (1 << 1): devPMinfo.append('USB')
+			if devPM & (1 << 2): devPMinfo.append('HDMI_CEC')
+			if devPM & (1 << 3): devPMinfo.append('BDROM')
+			if devPM & (1 << 4): devPMinfo.append('HDMI_5V')
+			devPMinfo = ' / '.join(devPMinfo)
+		
+		startByInfo = '-'
+		if UpCause != 'F'*8:
+			started = int(UpCause, 16)
+			startByInfo = []
+			if started & (1 <<  0): startByInfo.append('PSU')
+			if started & (1 <<  8): startByInfo.append('BUTTON')
+			if started & (1 <<  9): startByInfo.append('DISC')
+			if started & (1 << 10): startByInfo.append('EJECT')
+			if started & (1 << 16): startByInfo.append('SOC')
+			if started & (1 << 17): startByInfo.append('EAP')
+			if started & (1 << 18): startByInfo.append('CEC')
+			if started & (1 << 19): startByInfo.append('BT')
+			if started & (1 << 26): startByInfo.append('UART')
+			startByInfo = ' / '.join(startByInfo)
+		
+		lastSequenceNum = int(SeqNo, 16) if SeqNo != ['F'*4] else '-'
+		
+		tempSOC = 0 if TmpSoC == 'F'*4 else int(TmpSoC, 16)
+		tempENV = 0 if TmpEnv == 'F'*4 else int(TmpEnv, 16)
+		
+		tempSOC = str(tempSOC >> 8 & 0xFF) + '.' + str(tempSOC & 0xFF)[:2]
+		tempENV = str(tempENV >> 8 & 0xFF) + '.' + str(tempENV & 0xFF)[:2]
+		
+		date = '-'
+		if rtc != 'F'*8:
+			date = datetime.datetime(2012, 1, 1) + datetime.timedelta(seconds=int(rtc, 16))
+			date = date.strftime("%Y-%m-%d %H:%M:%S")
+		
+		print(Clr.fg.d_grey + ' %02d %s %s %s %s %s %s %s %s'%(count, Clr.reset + code + Clr.fg.d_grey, rtc, PowState, UpCause, SeqNo, DevPm, TmpSoC, TmpEnv) + Clr.reset)
+		
+		if code != 'F'*8:
+			print()
+			UI.showTable({
+				'Date'			: date,
+				'OS state'		: osStateInfo,
+				'System state'	: sysStateInfo,
+				'Started By'	: startByInfo,
+				'Last Sequence'	: str(lastSequenceNum),
+				'Power state'	: devPMinfo,
+				'Temp'			: '%s° (SoC) / %s° (Env)'%(tempSOC, tempENV),
+			})
+		print()
+		print(' %s\n'%getErrorCodeDesc(code))
+		print(UI.DIVIDER_DASH)
+	
+	print(UI.highlight(STR_TOTAL%count))
+	
